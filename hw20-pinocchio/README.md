@@ -4,9 +4,9 @@
 #### Getting Started
 
 
-**First**, you need to install Miniconda. **Download Miniconda**: https://www.anaconda.com/docs/getting-started/miniconda/main
+1) need to install Miniconda. **Download Miniconda**: https://www.anaconda.com/docs/getting-started/miniconda/main
 
-**Second**, create a dedicated conda environment and install the required libraries:
+2) create a dedicated conda environment and install the required libraries:
 
 ```bash
 conda create -n pin-env
@@ -17,8 +17,7 @@ conda install pinocchio -c conda-forge
 ```
 3) Start main.py and wait.
 
-
-Running the Project
+### Running the Project
 Activate the environment:
 
 ```bash
