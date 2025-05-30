@@ -1,10 +1,10 @@
 from Zmp import plot_zmp
+import matplotlib.pyplot as plt
+import numpy as np
 
 class Plotter:
     @staticmethod
     def plot_all(com_traj, left_ank, right_ank, t_total, footsteps):
-        import matplotlib.pyplot as plt
-        import numpy as np
 
         t_plot = np.linspace(0, t_total, 100)
         com_traj_plot = np.array([com_traj(t) for t in t_plot])
@@ -48,3 +48,15 @@ class Plotter:
         plt.show()
         plot_zmp(footsteps)
         print("Plots generated successfully!")
+        
+    def plot_moment(com_traj, t_total):
+        t_plot = np.linspace(0, t_total, 100)
+        moments = np.array([com_traj.compute_moment(t) for t in t_plot])
+        plt.figure()
+        plt.plot(t_plot, moments, label='Moment about ZMP')
+        plt.title('Moment of Forces')
+        plt.xlabel('Time (s)')
+        plt.ylabel('Moment (N·m)')
+        plt.legend()
+        plt.grid(True)
+        plt.show()

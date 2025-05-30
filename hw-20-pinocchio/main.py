@@ -15,7 +15,7 @@ from Zmp import *
 ankle_to_sole_height= 0.08 
 foot_lift_height=0.1
 robot_base_height=0.862+ankle_to_sole_height
-com_height=0.9
+# com_height=0.9
 
 footsteps = FootSteps([.0, -.1], [.0, .1])
 footsteps.add_phase(.3, 'none')
@@ -34,8 +34,12 @@ footsteps.add_phase(.5, 'none')
 
 print("Started computing ...")
 zmptraj = ZmpClass(footsteps)
-com_traj = CoMClass(zmptraj)
+com_traj = CoMClass(zmptraj, com_z_nominal=robot_base_height)
 print("CoM trajectory computed")
+
+com_traj.plot_ctrl_error_x()
+com_traj.plot_ctrl_error_y()
+com_traj.plot_com_traj()
 
 left_ank = LeftLeg(footsteps)
 right_ank = RightLeg(footsteps)
@@ -83,5 +87,6 @@ animator.animate(t_total)
 print("Animation completed")
 
 Plotter.plot_all(com_traj, left_ank, right_ank, t_total, footsteps)
+Plotter.plot_moment(com_traj, t_total)
 
 print("Plots generated")

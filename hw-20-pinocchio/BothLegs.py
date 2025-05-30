@@ -1,4 +1,3 @@
-
 from FootSteps import *
 import numpy as np
 import matplotlib.pyplot as plt
@@ -18,10 +17,17 @@ class LeftLeg(object):
         t_start=self.footsteps.get_phase_start(t)
         t_total=self.footsteps.get_phase_duration(t)
         k=(t-t_start)/t_total
-
-        z_foot=h_lift*np.sin(k*np.pi)+d_foot_ankle
-        act_left= left+(left_next-left)*k
-        return np.array([act_left[0],act_left[1],z_foot])
+        
+        phase_type = self.footsteps.get_phase_type(t)
+        
+        if phase_type == 'left':
+            z_foot=h_lift*np.sin(k*np.pi)+d_foot_ankle
+            act_left = left + (left_next - left) * k
+        else:
+            z_foot = d_foot_ankle
+            act_left = left
+            
+        return np.array([act_left[0], act_left[1], z_foot])
 
 class RightLeg(object):
 
@@ -34,10 +40,17 @@ class RightLeg(object):
         t_start=self.footsteps.get_phase_start(t)
         t_total=self.footsteps.get_phase_duration(t)
         k=(t-t_start)/t_total
-
-        z_foot=h_lift*np.sin(k*np.pi)+d_foot_ankle
-        act_right= right+(right_next-right)*k
-        return np.array([act_right[0],act_right[1],z_foot])
+        
+        phase_type = self.footsteps.get_phase_type(t)
+        
+        if phase_type == 'right':
+            z_foot=h_lift*np.sin(k*np.pi)+d_foot_ankle
+            act_right = right + (right_next - right) * k
+        else:
+            z_foot = d_foot_ankle
+            act_right = right
+            
+        return np.array([act_right[0], act_right[1], z_foot])
 
 def plot_legs(footsteps:FootSteps):
     tmp_left=LeftLeg(footsteps)
@@ -54,5 +67,9 @@ def plot_legs(footsteps:FootSteps):
         ankle_left_traj[k,:]=tmp_left(t_q)
         ankle_right_traj[k,:]=tmp_right(t_q)
     ax = plt.figure().add_subplot(projection='3d')
-    ax.plot(ankle_left_traj[:,0],ankle_left_traj[:,1],ankle_left_traj[:,2])
+    ax.plot(ankle_left_traj[:,0],ankle_left_traj[:,1],ankle_left_traj[:,2], label='Left leg')
+    ax.plot(ankle_right_traj[:,0],ankle_right_traj[:,1],ankle_right_traj[:,2], label='Right leg')
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.legend()
     plt.show()

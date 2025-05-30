@@ -5,14 +5,17 @@ from Factor import *
 from Zmp import *
 import matplotlib.pyplot as plt
 
+MASS = 10.0
+
 class CoMClass(object):
-    def __init__(self, zmp_traj: ZmpClass, 
+    def __init__(self, zmp_traj: ZmpClass,
+                 com_z_nominal: float = 0.9,  
                  solver='LCQP',
                  flag_plot=False):
         self.zmp_traj = zmp_traj
         self.dt=0.005 #sampling time
         self.t_end= self.zmp_traj.footsteps.timetime[-1]
-        self.com_z=0.8
+        self.com_z=com_z_nominal
         self.g=9.8        
         self.x_opt=[]
         self.y_opt=[]
@@ -27,39 +30,57 @@ class CoMClass(object):
         else:
             pass
 
-    def solve_CoM_traj(self, dir:int):
+    def solve_CoM_traj(self, dir: int):
         '''
-        dir: 0 , x direction, 1 y direction
+        dir: 0 for x direction, 1 for y direction
+        Solves CoM trajectory ensuring ZMP = CoM projection (zero moment).
         '''
-        # u = ddc  //x=[c dc]
-        # y = c - z/g*u      
-        # X=[c_k, dc_k, u_k]  
         N = self.N
-        nx = 3
-        L=self.L        
+        nx = 3 
+        L = self.L  # com_z / g
         f = FactorGraph(nx, N)
-        M1=np.array([[0,1,self.dt],[1,self.dt,0]])
-        M2=np.array([[0,1,0],[1,0,0]])
-        Mf=eye(1)
-        Mc=np.array([[1,0,-L]])
-        for k in range(N-1):
-            f.add_factor_constraint([Factor(k, M1), Factor(k+1, -M2)],zero(2))
         
+        M1=np.array([[1, self.dt, 0], [0, 1, self.dt], [0, 0, 1]]) 
+        M2=np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+        for k in range(N-1):
+            f.add_factor_constraint([Factor(k, M1), Factor(k+1, -M2)], zero(3))
+        
+        Mc = np.array([[1, 0, -L]])  
+        Mf=eye(1)
         for k in range(N):
-            traj_x=self.zmp_traj(self.dt*k)[dir]
-            f.add_factor([Factor(k,Mc)],Mf*traj_x)
-        opt=f.solve()
+            traj_x = self.zmp_traj(self.dt * k)[dir]
+            f.add_factor_constraint([Factor(k, Mc)], Mf * traj_x)  
+        
+        opt= f.solve()
         if dir == 0:
             self.x_opt=np.copy(opt)
         else:
-            self.y_opt=np.copy(opt)            
-        return np.reshape(opt[0::3],len(opt[0::3]))
+            self.y_opt=np.copy(opt)
+        
+        return np.reshape(opt[0::3], len(opt[0::3]))
  
     def __call__(self, t):     
         idx = int(t / self.dt)
         idx = min(idx, len(self.x_traj) - 1) # check bounds
         idx = max(idx, 0)
-        return np.array([self.x_traj[idx], self.y_traj[idx], 0.9])    
+        return np.array([self.x_traj[idx], self.y_traj[idx], self.com_z]) 
+    
+    def compute_moment(self, t):
+            idx = int(t / self.dt)
+            idx = min(idx, self.N - 1)
+            idx = max(idx, 0)
+
+            com_pos_x = self.x_traj[idx]
+            com_pos_y = self.y_traj[idx]
+            
+            ddc_x = self.x_opt[idx * 3 + 2]
+            ddc_y = self.y_opt[idx * 3 + 2]
+            
+            zmp_ref = self.zmp_traj(t) # This is [zmp_ref_x, zmp_ref_y]
+            moment_y_component = MASS * self.g * (com_pos_x - zmp_ref[0] - self.L * ddc_x)            
+            moment_x_component = -MASS * self.g * (com_pos_y - zmp_ref[1] - self.L * ddc_y)
+            
+            return np.linalg.norm([moment_x_component, moment_y_component])
 
     def plot_ctrl_error_x(self):
         if self.solver != "LCQP":

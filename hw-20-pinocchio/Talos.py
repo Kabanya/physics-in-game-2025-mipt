@@ -16,7 +16,7 @@ class Talos:
         self.base_foot_height = base_foot_height
         self.dt = dt
 
-    def inverse_kinematics(self, frame_id, target_pose, q_init, max_iter=50):
+    def inverse_kinematics(self, frame_id, target_pose, q_init, max_iter=100):
         import pinocchio as pin
         oMtarget = pin.SE3(target_pose)
         q = q_init.copy()
@@ -26,18 +26,18 @@ class Talos:
         if "left" in model.frames[frame_id].name:
             knee_joint_names = ["leg_left_3_joint"]
             leg_joint_names = ["leg_left_1_joint", "leg_left_2_joint", "leg_left_3_joint", 
-                              "leg_left_4_joint", "leg_left_5_joint", "leg_left_6_joint"]
+                            "leg_left_4_joint", "leg_left_5_joint", "leg_left_6_joint"]
         else:
             knee_joint_names = ["leg_right_3_joint"]
             leg_joint_names = ["leg_right_1_joint", "leg_right_2_joint", "leg_right_3_joint",
-                              "leg_right_4_joint", "leg_right_5_joint", "leg_right_6_joint"]
+                            "leg_right_4_joint", "leg_right_5_joint", "leg_right_6_joint"]
         
         for i in range(max_iter):
             pin.framesForwardKinematics(model, data, q)
             dM = oMtarget.actInv(data.oMf[frame_id])
             err = pin.log(dM).vector
             
-            if np.linalg.norm(err) < 1e-4:
+            if np.linalg.norm(err) < 1e-6:  # Tighter threshold
                 break
                 
             J = pin.computeFrameJacobian(model, data, q, frame_id)
