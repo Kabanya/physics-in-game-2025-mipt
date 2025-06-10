@@ -2,6 +2,8 @@ import time
 import numpy as np
 import pinocchio as pin
 import example_robot_data
+import meshcat.geometry as g
+import meshcat.transformations as tf
 from pinocchio.visualize import MeshcatVisualizer
 
 from BothLegs import LeftLeg, RightLeg
@@ -12,10 +14,12 @@ from Factor import *
 from CoM import *
 from Zmp import *
 
-ankle_to_sole_height= 0.08 
-foot_lift_height=0.1
-robot_base_height=0.862+ankle_to_sole_height
-# com_height=0.9
+robot_com = 0.8766814
+DT = 0.1 # 0.05
+
+robot = example_robot_data.load("talos")
+model = robot.model
+data = robot.data
 
 footsteps = FootSteps([.0, -.1], [.0, .1])
 footsteps.add_phase(.3, 'none')
@@ -32,61 +36,45 @@ footsteps.add_phase(.1, 'none')
 footsteps.add_phase(.7, 'right', [.5, -.1])
 footsteps.add_phase(.5, 'none')
 
-print("Started computing ...")
-zmptraj = ZmpClass(footsteps)
-com_traj = CoMClass(zmptraj, com_z_nominal=robot_base_height)
-print("CoM trajectory computed")
+print("Computing started...")
+zmp_traj = ZmpClass(footsteps)
+com_traj = CoMClass(zmp_traj, com_z_nominal=robot_com)
 
-com_traj.plot_ctrl_error_x()
-com_traj.plot_ctrl_error_y()
-com_traj.plot_com_traj()
-
-left_ank = LeftLeg(footsteps)
-right_ank = RightLeg(footsteps)
-
-robot = example_robot_data.load("talos")
-model = robot.model
-data = robot.data
-
+# Initialize visualizer
 robot.setVisualizer(MeshcatVisualizer())
 robot.initViewer(open=True)
 robot.loadViewerModel("pinocchio")
-
 robot.display(robot.q0)
 
-left_foot_id = model.getFrameId("leg_left_sole_fix_joint")
-right_foot_id = model.getFrameId("leg_right_sole_fix_joint")
-
-print(f"Left foot frame ID: {left_foot_id}")
-print(f"Right foot frame ID: {right_foot_id}")
+# Visualize CoM and ZMP
+meshcat_viz = robot.viz.viewer
+meshcat_viz["zmp"].set_object(g.Sphere(0.050), g.MeshLambertMaterial(color=0xff0000))  # red - ZMP
+meshcat_viz["com"].set_object(g.Sphere(0.125), g.MeshLambertMaterial(color=0x0000ff))  # blue - CoM
 
 pin.framesForwardKinematics(model, data, robot.q0)
+# set foots
+left_foot_id = model.getFrameId("leg_left_sole_fix_joint")
+right_foot_id = model.getFrameId("leg_right_sole_fix_joint")
+# set initial foot positions
 initial_left_height = data.oMf[left_foot_id].translation[2]
 initial_right_height = data.oMf[right_foot_id].translation[2]
 base_foot_height = (initial_left_height + initial_right_height) / 2.0
-
-print(f"Initial left foot height: {initial_left_height:.3f}")
-print(f"Initial right foot height: {initial_right_height:.3f}")
-print(f"Using base foot height: {base_foot_height:.3f}")
-
+left_ank = LeftLeg(footsteps, base_foot_height)
+right_ank = RightLeg(footsteps, base_foot_height)
+# Calculate total time for the animation
 t_total = footsteps.timetime[-1]
-dt = 0.05
-N = int(t_total / dt)
-
-print(f"Starting animation for {t_total:.2f} seconds...")
-
-prev_com_z = robot_base_height
 
 animator = Talos(
     robot, model, data, left_foot_id, right_foot_id,
     left_ank, right_ank, com_traj, footsteps,
-    robot_base_height, base_foot_height, dt
+    robot_com, base_foot_height, DT,
+    zmp_traj=zmp_traj
 )
 animator.animate(t_total)
 
-print("Animation completed")
-
-Plotter.plot_all(com_traj, left_ank, right_ank, t_total, footsteps)
-Plotter.plot_moment(com_traj, t_total)
-
-print("Plots generated")
+# Plotter.plot_time_series(com_traj, left_ank, right_ank, t_total)
+# Plotter.plot_moment(com_traj, t_total)
+# Plotter.plot_zmp_com_feet(zmp_traj, com_traj, left_ank, right_ank, t_total, dt)
+# Plotter.plot_footsteps(footsteps)
+# Plotter.plot_ctrl_error_x(com_traj)
+# Plotter.plot_ctrl_error_y(com_traj)
