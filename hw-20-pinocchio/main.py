@@ -72,9 +72,5 @@ animator = Talos(
 )
 animator.animate(t_total)
 
-# Plotter.plot_time_series(com_traj, left_ank, right_ank, t_total)
-# Plotter.plot_moment(com_traj, t_total)
-# Plotter.plot_zmp_com_feet(zmp_traj, com_traj, left_ank, right_ank, t_total, dt)
-# Plotter.plot_footsteps(footsteps)
-# Plotter.plot_ctrl_error_x(com_traj)
-# Plotter.plot_ctrl_error_y(com_traj)
+Plotter.plot_time_series(com_traj, left_ank, right_ank, t_total)
+Plotter.plot_zmp_com_feet(zmp_traj, com_traj, left_ank, right_ank, t_total, DT)
