@@ -27,9 +27,7 @@ class CoMClass(object):
         
         self.x_traj = self.solve_CoM_traj(0) #solve x trajectory
         self.y_traj = self.solve_CoM_traj(1) #y
-        
-        self._log_detailed_trajectories()
-
+    
     def solve_CoM_traj(self, dir: int):
         '''
         dir: 0 for x direction, 1 for y direction

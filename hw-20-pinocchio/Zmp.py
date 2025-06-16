@@ -4,9 +4,7 @@ from FootSteps import FootSteps
 
 class ZmpClass(object):
     def __init__(self, footsteps: FootSteps):
-        self.footsteps = footsteps     
-        self._log_zmp_trajectory()
-        
+        self.footsteps = footsteps       
         
     def __call__(self, t):
         foot = self.footsteps.get_phase_type(t)
