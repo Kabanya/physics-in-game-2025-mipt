@@ -31,7 +31,7 @@ OR acrivate pin-env via your IDE.
 2.3) Let's install the necessary libraries:
 ```bash
 conda install scipy 
-conda install meshcat
+conda install -c conda-forge meshcat
 conda install -c conda-forge matplotlib
 conda install -c conda-forge pinocchio 
 conda install -c conda-forge example-robot-data
